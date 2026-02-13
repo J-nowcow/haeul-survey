@@ -1,5 +1,6 @@
 import { getDb } from '@/lib/db';
 import { NextResponse } from 'next/server';
+import { isAdminAuthenticated } from '@/lib/auth';
 
 interface TodayStats {
   count: number;
@@ -24,6 +25,15 @@ interface TotalStats {
 }
 
 export async function GET() {
+  // 인증 확인
+  const isAuthenticated = await isAdminAuthenticated();
+  if (!isAuthenticated) {
+    return NextResponse.json(
+      { error: '인증이 필요합니다.' },
+      { status: 401 }
+    );
+  }
+
   try {
     const sql = getDb();
     const today = new Date().toISOString().split('T')[0];

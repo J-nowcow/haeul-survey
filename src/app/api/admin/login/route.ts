@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { createAdminToken } from '@/lib/auth';
 
 export async function POST(request: NextRequest) {
   try {
@@ -14,8 +15,8 @@ export async function POST(request: NextRequest) {
     }
     
     if (password === adminPassword) {
-      // 간단한 세션 토큰 생성 (실제 운영에서는 더 안전한 방식 권장)
-      const token = Buffer.from(`admin:${Date.now()}`).toString('base64');
+      // HMAC 서명된 토큰 생성
+      const token = createAdminToken();
       
       const response = NextResponse.json({ success: true });
       

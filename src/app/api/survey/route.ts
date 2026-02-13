@@ -1,5 +1,6 @@
 import { getDb } from '@/lib/db';
 import { NextRequest, NextResponse } from 'next/server';
+import { isAdminAuthenticated } from '@/lib/auth';
 
 export async function POST(request: NextRequest) {
   try {
@@ -58,6 +59,15 @@ export async function POST(request: NextRequest) {
 }
 
 export async function GET(request: NextRequest) {
+  // 인증 확인 (admin만 환자 목록 조회 가능)
+  const isAuthenticated = await isAdminAuthenticated();
+  if (!isAuthenticated) {
+    return NextResponse.json(
+      { error: '인증이 필요합니다.' },
+      { status: 401 }
+    );
+  }
+
   try {
     const sql = getDb();
     const { searchParams } = new URL(request.url);
