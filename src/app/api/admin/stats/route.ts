@@ -62,14 +62,15 @@ export async function GET() {
         COUNT(*) as count
       FROM survey_results
       WHERE DATE(created_at) = ${today}
-      GROUP BY grade
-      ORDER BY 
-        CASE grade
-          WHEN '양호' THEN 1
-          WHEN '경도' THEN 2
-          WHEN '중등도' THEN 3
-          WHEN '중증' THEN 4
+      GROUP BY 
+        CASE 
+          WHEN normalized_score <= 20 THEN '양호'
+          WHEN normalized_score <= 40 THEN '경도'
+          WHEN normalized_score <= 60 THEN '중등도'
+          ELSE '중증'
         END
+      ORDER BY 
+        MIN(normalized_score)
     ` as DistributionStats[];
 
     // 전체 통계
