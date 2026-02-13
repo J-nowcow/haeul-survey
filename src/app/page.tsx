@@ -1,65 +1,172 @@
-import Image from "next/image";
+'use client';
+
+import { useState } from 'react';
+import { useRouter } from 'next/navigation';
+
+interface PatientInfo {
+  name: string;
+  birthDate: string;
+  gender: 'male' | 'female' | '';
+  phoneLast4: string;
+}
+
+interface FormErrors {
+  name?: string;
+  birthDate?: string;
+  gender?: string;
+  phoneLast4?: string;
+}
 
 export default function Home() {
+  const router = useRouter();
+  const [patientInfo, setPatientInfo] = useState<PatientInfo>({
+    name: '',
+    birthDate: '',
+    gender: '',
+    phoneLast4: '',
+  });
+  const [errors, setErrors] = useState<FormErrors>({});
+
+  const validate = () => {
+    const newErrors: FormErrors = {};
+    
+    if (!patientInfo.name.trim()) {
+      newErrors.name = '이름을 입력해주세요';
+    }
+    
+    if (!patientInfo.birthDate || patientInfo.birthDate.length !== 6) {
+      newErrors.birthDate = '생년월일 6자리를 입력해주세요 (예: 800101)';
+    }
+    
+    if (!patientInfo.gender) {
+      newErrors.gender = '성별을 선택해주세요';
+    }
+    
+    if (!patientInfo.phoneLast4 || patientInfo.phoneLast4.length !== 4) {
+      newErrors.phoneLast4 = '연락처 뒤 4자리를 입력해주세요';
+    }
+    
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (validate()) {
+      // 세션 스토리지에 환자 정보 저장
+      sessionStorage.setItem('patientInfo', JSON.stringify(patientInfo));
+      router.push('/survey');
+    }
+  };
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex min-h-screen w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
+    <main className="min-h-screen flex flex-col items-center justify-center p-4">
+      <div className="w-full max-w-md">
+        {/* 헤더 */}
+        <div className="text-center mb-8 animate-fadeIn">
+          <div className="text-6xl mb-4">🏥</div>
+          <h1 className="text-2xl font-bold text-[var(--color-primary)] mb-2">
+            해울한의원
           </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
+          <p className="text-[var(--color-text-light)]">
+            자가진단 설문조사
           </p>
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
+
+        {/* 환자 정보 입력 폼 */}
+        <form onSubmit={handleSubmit} className="card animate-slideIn">
+          <h2 className="text-lg font-semibold mb-6 text-center">
+            환자 정보를 입력해주세요
+          </h2>
+
+          {/* 이름 */}
+          <div className="mb-4">
+            <label className="block text-sm font-medium mb-2">이름</label>
+            <input
+              type="text"
+              value={patientInfo.name}
+              onChange={(e) => setPatientInfo({ ...patientInfo, name: e.target.value })}
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:border-[var(--color-primary)] transition"
+              placeholder="홍길동"
             />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+            {errors.name && <p className="text-red-500 text-sm mt-1">{errors.name}</p>}
+          </div>
+
+          {/* 생년월일 */}
+          <div className="mb-4">
+            <label className="block text-sm font-medium mb-2">생년월일 (6자리)</label>
+            <input
+              type="text"
+              inputMode="numeric"
+              maxLength={6}
+              value={patientInfo.birthDate}
+              onChange={(e) => setPatientInfo({ ...patientInfo, birthDate: e.target.value.replace(/\D/g, '') })}
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:border-[var(--color-primary)] transition"
+              placeholder="800101"
+            />
+            {errors.birthDate && <p className="text-red-500 text-sm mt-1">{errors.birthDate}</p>}
+          </div>
+
+          {/* 성별 */}
+          <div className="mb-4">
+            <label className="block text-sm font-medium mb-2">성별</label>
+            <div className="flex gap-4">
+              <button
+                type="button"
+                onClick={() => setPatientInfo({ ...patientInfo, gender: 'male' })}
+                className={`flex-1 py-3 px-4 rounded-lg border-2 transition font-medium ${
+                  patientInfo.gender === 'male'
+                    ? 'border-[var(--color-primary)] bg-[var(--color-primary)] text-white'
+                    : 'border-gray-300 bg-white hover:border-[var(--color-primary-light)]'
+                }`}
+              >
+                남성
+              </button>
+              <button
+                type="button"
+                onClick={() => setPatientInfo({ ...patientInfo, gender: 'female' })}
+                className={`flex-1 py-3 px-4 rounded-lg border-2 transition font-medium ${
+                  patientInfo.gender === 'female'
+                    ? 'border-[var(--color-primary)] bg-[var(--color-primary)] text-white'
+                    : 'border-gray-300 bg-white hover:border-[var(--color-primary-light)]'
+                }`}
+              >
+                여성
+              </button>
+            </div>
+            {errors.gender && <p className="text-red-500 text-sm mt-1">{errors.gender}</p>}
+          </div>
+
+          {/* 연락처 뒤 4자리 */}
+          <div className="mb-6">
+            <label className="block text-sm font-medium mb-2">연락처 뒤 4자리</label>
+            <input
+              type="text"
+              inputMode="numeric"
+              maxLength={4}
+              value={patientInfo.phoneLast4}
+              onChange={(e) => setPatientInfo({ ...patientInfo, phoneLast4: e.target.value.replace(/\D/g, '') })}
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:border-[var(--color-primary)] transition"
+              placeholder="1234"
+            />
+            {errors.phoneLast4 && <p className="text-red-500 text-sm mt-1">{errors.phoneLast4}</p>}
+          </div>
+
+          {/* 제출 버튼 */}
+          <button
+            type="submit"
+            className="w-full btn btn-primary text-lg"
           >
-            Documentation
-          </a>
-        </div>
-      </main>
-    </div>
+            설문 시작하기
+          </button>
+        </form>
+
+        {/* 안내 문구 */}
+        <p className="text-center text-sm text-[var(--color-text-light)] mt-6">
+          설문은 약 5~10분 정도 소요됩니다
+        </p>
+      </div>
+    </main>
   );
 }
