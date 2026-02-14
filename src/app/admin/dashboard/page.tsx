@@ -73,7 +73,7 @@ export default function AdminDashboard() {
   const [dateFilter, setDateFilter] = useState(format(new Date(), 'yyyy-MM-dd'));
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedResult, setSelectedResult] = useState<SurveyResult | null>(null);
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'list'>('dashboard');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'list'>('list');
 
   const fetchData = useCallback(async () => {
     try {
@@ -397,13 +397,17 @@ export default function AdminDashboard() {
 
       {/* 상세 보기 모달 */}
       {selectedResult && (
-        <DetailModal result={selectedResult} onClose={() => setSelectedResult(null)} />
+        <DetailModal 
+          result={selectedResult} 
+          onClose={() => setSelectedResult(null)} 
+          onRefresh={fetchData}
+        />
       )}
     </main>
   );
 }
 
-function DetailModal({ result, onClose }: { result: SurveyResult; onClose: () => void }) {
+function DetailModal({ result, onClose, onRefresh }: { result: SurveyResult; onClose: () => void; onRefresh: () => void }) {
   const [detail, setDetail] = useState<{
     section_scores: Record<string, { score: number; maxScore: number; skipped: boolean }>;
     selected_items: string[];
@@ -538,7 +542,7 @@ function DetailModal({ result, onClose }: { result: SurveyResult; onClose: () =>
       if (res.ok) {
         alert('저장되었습니다.');
         setIsEditing(false);
-        window.location.reload();
+        onRefresh();
       } else {
         alert('저장에 실패했습니다.');
       }
@@ -557,7 +561,8 @@ function DetailModal({ result, onClose }: { result: SurveyResult; onClose: () =>
       const res = await fetch(`/api/survey/${result.id}`, { method: 'DELETE' });
       if (res.ok) {
         alert('삭제되었습니다.');
-        window.location.reload();
+        onClose();
+        onRefresh();
       } else {
         alert('삭제에 실패했습니다.');
       }
