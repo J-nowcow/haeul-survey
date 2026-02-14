@@ -1,9 +1,22 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
-import ProgressBar from '@/components/ProgressBar';
-import { surveySections, SurveySection, getMaxScore, getGrade } from '@/lib/survey-data';
+import {
+  Activity, Brain, Utensils, Moon, Droplets, Thermometer,
+  HeartPulse, Flower, User, CheckCircle2,
+  ChevronRight, Wind, Waves,
+} from 'lucide-react';
+import {
+  SECTIONS, CATEGORIES, QUESTIONS,
+  getFilteredCategories, getMaxScore, analyzeResult,
+} from '@/lib/survey-data';
+
+// lucide-react 아이콘 매핑
+const ICON_MAP: Record<string, React.ComponentType<{ size?: number; strokeWidth?: number; className?: string }>> = {
+  Utensils, Moon, Wind, Waves, Droplets, Thermometer, Brain, Flower,
+  User, HeartPulse, Activity,
+};
 
 interface PatientInfo {
   name: string;
@@ -15,21 +28,10 @@ interface PatientInfo {
 export default function SurveyPage() {
   const router = useRouter();
   const [patientInfo, setPatientInfo] = useState<PatientInfo | null>(null);
-  const [currentSectionIndex, setCurrentSectionIndex] = useState(0);
-  const [selectedItems, setSelectedItems] = useState<Set<string>>(new Set());
-  const [skippedSections, setSkippedSections] = useState<Set<string>>(new Set());
+  const [currentSection, setCurrentSection] = useState('functional');
+  const [selectedItems, setSelectedItems] = useState<Record<string, number>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // 성별에 따라 필터링된 섹션 목록
-  const filteredSections = surveySections.filter(
-    (section) => !section.genderSpecific || section.genderSpecific === patientInfo?.gender
-  );
-
-  const currentSection: SurveySection | undefined = filteredSections[currentSectionIndex];
-  const totalSections = filteredSections.length;
-  const isLastSection = currentSectionIndex === totalSections - 1;
-
-  // 환자 정보 로드
   useEffect(() => {
     const stored = sessionStorage.getItem('patientInfo');
     if (!stored) {
@@ -39,104 +41,59 @@ export default function SurveyPage() {
     setPatientInfo(JSON.parse(stored));
   }, [router]);
 
-  // 섹션 전체 해당없음 토글
-  const toggleSkipSection = (sectionId: string) => {
-    const newSkipped = new Set(skippedSections);
-    if (newSkipped.has(sectionId)) {
-      newSkipped.delete(sectionId);
-    } else {
-      newSkipped.add(sectionId);
-      // 해당 섹션의 선택된 항목들 모두 제거
-      const newSelected = new Set(selectedItems);
-      currentSection?.questions.forEach((q) => {
-        newSelected.delete(q.id);
-      });
-      setSelectedItems(newSelected);
-    }
-    setSkippedSections(newSkipped);
-  };
+  const maxPossibleScore = useMemo(() => {
+    return getMaxScore(patientInfo?.gender);
+  }, [patientInfo?.gender]);
 
-  // 개별 항목 토글
-  const toggleItem = (itemId: string) => {
-    const newSelected = new Set(selectedItems);
-    if (newSelected.has(itemId)) {
-      newSelected.delete(itemId);
-    } else {
-      newSelected.add(itemId);
-    }
-    setSelectedItems(newSelected);
-  };
+  const totalScore = useMemo(
+    () => Object.values(selectedItems).reduce((sum, score) => sum + score, 0),
+    [selectedItems]
+  );
 
-  // 점수 계산
-  const calculateScore = () => {
-    let totalScore = 0;
-    filteredSections.forEach((section) => {
-      if (!skippedSections.has(section.id)) {
-        section.questions.forEach((q) => {
-          if (selectedItems.has(q.id)) {
-            totalScore += q.score;
-          }
-        });
-      }
+  const normalizedScore = useMemo(() => {
+    if (maxPossibleScore === 0) return 0;
+    return Math.round((totalScore / maxPossibleScore) * 100);
+  }, [totalScore, maxPossibleScore]);
+
+  const toggleItem = (categoryId: string, questionId: string, score: number) => {
+    setSelectedItems(prev => {
+      const key = `${categoryId}-${questionId}`;
+      const newItems = { ...prev };
+      if (newItems[key]) delete newItems[key];
+      else newItems[key] = score;
+      return newItems;
     });
-    return totalScore;
   };
 
-  // 섹션별 점수 계산
-  const calculateSectionScores = () => {
-    const scores: Record<string, { score: number; maxScore: number; skipped: boolean }> = {};
-    filteredSections.forEach((section) => {
-      const maxScore = section.questions.reduce((sum, q) => sum + q.score, 0);
-      if (skippedSections.has(section.id)) {
-        scores[section.id] = { score: 0, maxScore, skipped: true };
-      } else {
-        const score = section.questions.reduce((sum, q) => {
-          return sum + (selectedItems.has(q.id) ? q.score : 0);
-        }, 0);
-        scores[section.id] = { score, maxScore, skipped: false };
-      }
-    });
-    return scores;
-  };
-
-  // 다음 섹션으로
-  const handleNext = () => {
-    if (isLastSection) {
-      handleSubmit();
-    } else {
-      setCurrentSectionIndex((prev) => prev + 1);
-      window.scrollTo(0, 0);
-    }
-  };
-
-  // 이전 섹션으로
-  const handlePrev = () => {
-    if (currentSectionIndex > 0) {
-      setCurrentSectionIndex((prev) => prev - 1);
-      window.scrollTo(0, 0);
-    }
-  };
-
-  // 설문 제출
   const handleSubmit = async () => {
     if (!patientInfo) return;
-    
     setIsSubmitting(true);
-    
-    const totalScore = calculateScore();
-    const maxScore = getMaxScore(patientInfo.gender);
-    const normalizedScore = Math.round((totalScore / maxScore) * 100);
-    const gradeInfo = getGrade(normalizedScore);
-    const sectionScores = calculateSectionScores();
+
+    const gradeInfo = analyzeResult(normalizedScore);
+
+    // 섹션별 점수 계산
+    const sectionScores: Record<string, { score: number; maxScore: number; skipped: boolean }> = {};
+    const allCategoryIds = Object.values(CATEGORIES).flat()
+      .filter(cat => !cat.genderSpecific || cat.genderSpecific === patientInfo.gender)
+      .map(cat => cat.id);
+
+    allCategoryIds.forEach(catId => {
+      const questions = QUESTIONS[catId] || [];
+      const maxScore = questions.reduce((sum, q) => sum + q.score, 0);
+      const score = questions.reduce((sum, q) => {
+        return sum + (selectedItems[`${catId}-${q.id}`] || 0);
+      }, 0);
+      sectionScores[catId] = { score, maxScore, skipped: false };
+    });
 
     const surveyData = {
       patientInfo,
       totalScore,
       normalizedScore,
-      grade: `${gradeInfo.level}단계: ${gradeInfo.grade}`,
+      grade: gradeInfo.level,
       sectionScores,
-      selectedItems: Array.from(selectedItems),
-      skippedSections: Array.from(skippedSections),
+      selectedItems: Object.keys(selectedItems),
+      skippedSections: [],
     };
 
     try {
@@ -146,17 +103,18 @@ export default function SurveyPage() {
         body: JSON.stringify(surveyData),
       });
 
-      if (!response.ok) {
-        throw new Error('제출 실패');
-      }
+      if (!response.ok) throw new Error('제출 실패');
 
       const result = await response.json();
-      
-      // 결과 페이지로 이동
+
       sessionStorage.setItem('surveyResult', JSON.stringify({
         ...surveyData,
         id: result.id,
-        gradeInfo,
+        gradeInfo: {
+          ...gradeInfo,
+          level: normalizedScore <= 30 ? 1 : normalizedScore <= 50 ? 2 : normalizedScore <= 80 ? 3 : 4,
+        },
+        normalizedScore,
       }));
       router.push('/result');
     } catch (error) {
@@ -166,135 +124,138 @@ export default function SurveyPage() {
     }
   };
 
-  if (!patientInfo || !currentSection) {
+  if (!patientInfo) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[var(--color-primary)] mx-auto"></div>
-          <p className="mt-4 text-[var(--color-text-light)]">로딩 중...</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-haeul-800 mx-auto" />
+          <p className="mt-4 text-haeul-600">로딩 중...</p>
         </div>
       </div>
     );
   }
 
-  const isSectionSkipped = skippedSections.has(currentSection.id);
+  const filteredCategories = getFilteredCategories(currentSection, patientInfo.gender);
 
   return (
-    <main className="min-h-screen p-4 pb-24">
-      <div className="max-w-2xl mx-auto">
-        {/* 헤더 */}
-        <div className="text-center mb-4">
-          <h1 className="text-xl font-bold text-[var(--color-primary)]">
-            해울한의원 자가진단
-          </h1>
-          <p className="text-sm text-[var(--color-text-light)]">
-            {patientInfo.name}님의 건강 상태를 체크합니다
+    <div className="max-w-3xl mx-auto min-h-screen pb-32">
+      {/* 헤더 */}
+      <header className="bg-white/90 backdrop-blur-md p-6 sticky top-0 z-20 shadow-sm border-b border-haeul-200">
+        <div className="flex justify-between items-center mb-4">
+          <div>
+            <h1 className="text-xl md:text-2xl font-bold text-haeul-800">{patientInfo.name}님</h1>
+            <p className="text-sm text-haeul-600 font-medium">해울한의원 자가진단</p>
+          </div>
+          <div className="text-right">
+            <div className="text-xs font-bold text-haeul-600 mb-1">현재 상태</div>
+            <div className="text-2xl font-black text-haeul-800 leading-none">
+              {normalizedScore}<span className="text-sm font-normal text-haeul-300"> / 100</span>
+            </div>
+          </div>
+        </div>
+        {/* 탭 바 */}
+        <div className="flex p-1.5 bg-haeul-50 rounded-xl overflow-x-auto gap-1">
+          {SECTIONS.map((section) => (
+            <button
+              key={section.id}
+              onClick={() => setCurrentSection(section.id)}
+              className={`flex-1 py-2.5 text-sm md:text-base font-bold rounded-lg whitespace-nowrap px-3 transition-colors ${
+                currentSection === section.id
+                  ? 'bg-white text-haeul-800 shadow-sm'
+                  : 'text-haeul-300 hover:text-haeul-600'
+              }`}
+            >
+              {section.title.split(' (')[0]}
+            </button>
+          ))}
+        </div>
+      </header>
+
+      {/* 메인 콘텐츠 */}
+      <main className="p-4 md:p-6">
+        {/* 섹션 안내 */}
+        <div className="mb-6 p-5 bg-haeul-800/5 border border-haeul-200 rounded-2xl text-haeul-800 text-sm md:text-base leading-relaxed">
+          <p className="font-bold mb-1 flex items-center gap-2">
+            <CheckCircle2 size={16} className="text-haeul-800" />
+            {SECTIONS.find(s => s.id === currentSection)?.title}
+          </p>
+          <p className="text-haeul-600 pl-6">
+            {SECTIONS.find(s => s.id === currentSection)?.description}
           </p>
         </div>
 
-        {/* 진행률 */}
-        <ProgressBar
-          current={currentSectionIndex + 1}
-          total={totalSections}
-          sectionName={`${currentSection.icon} ${currentSection.title}`}
-        />
+        {/* 카테고리별 카드 */}
+        {filteredCategories.map(category => {
+          const IconComponent = ICON_MAP[category.iconName] || Activity;
+          const questions = QUESTIONS[category.id] || [];
 
-        {/* 섹션 카드 */}
-        <div className="card animate-fadeIn">
-          {/* 섹션 헤더 */}
-          <div className="flex items-center gap-3 mb-4">
-            <span className="text-3xl">{currentSection.icon}</span>
-            <div>
-              <h2 className="text-lg font-semibold">{currentSection.title}</h2>
-              <p className="text-sm text-[var(--color-text-light)]">
-                {currentSection.description}
-              </p>
+          return (
+            <div key={category.id} className="mb-6 bg-white p-5 rounded-3xl shadow-sm border border-haeul-100">
+              <div className={`flex items-center gap-2.5 mb-5 text-lg font-bold ${category.iconColor}`}>
+                <IconComponent size={24} strokeWidth={2} />
+                <h3>{category.name}</h3>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                {questions.map(q => {
+                  const isSelected = !!selectedItems[`${category.id}-${q.id}`];
+                  return (
+                    <div
+                      key={q.id}
+                      onClick={() => toggleItem(category.id, q.id, q.score)}
+                      className={`cursor-pointer p-4 rounded-2xl border-2 transition-all duration-200 flex items-start gap-3 select-none ${
+                        isSelected
+                          ? 'bg-haeul-800 border-haeul-800 text-white shadow-md transform scale-[1.01]'
+                          : 'bg-haeul-50 border-transparent text-haeul-600 hover:bg-haeul-100'
+                      }`}
+                    >
+                      <div className="mt-0.5 min-w-[20px]">
+                        {isSelected ? (
+                          <CheckCircle2 size={20} className="text-white" />
+                        ) : (
+                          <div className="w-5 h-5 rounded-full border-2 border-haeul-200 bg-white" />
+                        )}
+                      </div>
+                      <span className={`text-base font-medium leading-snug ${isSelected ? 'text-white' : ''}`}>
+                        {q.text}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
             </div>
-          </div>
+          );
+        })}
+      </main>
 
-          {/* 전체 해당없음 체크박스 */}
-          <div
-            onClick={() => toggleSkipSection(currentSection.id)}
-            className={`flex items-center gap-3 p-4 rounded-xl mb-4 cursor-pointer transition border-2 ${
-              isSectionSkipped
-                ? 'border-[var(--color-primary)] bg-[var(--color-primary)]/10'
-                : 'border-gray-200 bg-gray-50 hover:border-[var(--color-primary-light)]'
-            }`}
-          >
-            <input
-              type="checkbox"
-              checked={isSectionSkipped}
-              onChange={() => {}}
-              className="checkbox-custom"
-            />
-            <div>
-              <span className="font-semibold text-[var(--color-primary)]">
-                이 섹션 전체 해당없음
-              </span>
-              <p className="text-sm text-[var(--color-text-light)]">
-                아래 증상이 모두 없으시면 체크해주세요
-              </p>
+      {/* 하단 고정 버튼 */}
+      <div className="fixed bottom-0 left-0 right-0 p-4 bg-white/90 backdrop-blur-md border-t border-haeul-200 shadow-[0_-4px_20px_-5px_rgba(0,0,0,0.1)] z-20 safe-area-bottom">
+        <div className="max-w-3xl mx-auto flex gap-3">
+          {currentSection === 'functional' ? (
+            <button
+              onClick={() => { setCurrentSection('structural'); window.scrollTo(0, 0); }}
+              className="btn-press w-full py-4 bg-haeul-800 text-white rounded-2xl font-bold text-lg hover:bg-haeul-900 flex items-center justify-center gap-2 shadow-lg"
+            >
+              다음 단계 (부위별 증상) <ChevronRight size={20} />
+            </button>
+          ) : (
+            <div className="flex w-full gap-3">
+              <button
+                onClick={() => { setCurrentSection('functional'); window.scrollTo(0, 0); }}
+                className="btn-press flex-1 py-4 bg-white border-2 border-haeul-200 text-haeul-600 rounded-2xl font-bold text-lg hover:bg-haeul-50"
+              >
+                이전
+              </button>
+              <button
+                onClick={handleSubmit}
+                disabled={isSubmitting}
+                className="btn-press flex-[2] py-4 bg-haeul-800 text-white rounded-2xl font-bold text-lg hover:bg-haeul-900 flex items-center justify-center gap-2 shadow-lg disabled:opacity-50"
+              >
+                {isSubmitting ? '제출 중...' : '결과 분석하기'} <Activity size={20} />
+              </button>
             </div>
-          </div>
-
-          {/* 개별 질문 목록 */}
-          <div className={`space-y-3 ${isSectionSkipped ? 'opacity-40 pointer-events-none' : ''}`}>
-            {currentSection.questions.map((question, index) => {
-              const isSelected = selectedItems.has(question.id);
-              return (
-                <div
-                  key={question.id}
-                  onClick={() => !isSectionSkipped && toggleItem(question.id)}
-                  className={`flex items-center gap-3 p-4 rounded-xl cursor-pointer transition border-2 ${
-                    isSelected
-                      ? 'border-[var(--color-primary)] bg-[var(--color-primary)]/5'
-                      : 'border-gray-200 hover:border-[var(--color-primary-light)]'
-                  }`}
-                >
-                  <input
-                    type="checkbox"
-                    checked={isSelected}
-                    onChange={() => {}}
-                    className="checkbox-custom"
-                  />
-                  <span className="flex-1">
-                    {index + 1}. {question.text}
-                  </span>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-
-        {/* 네비게이션 버튼 */}
-        <div className="fixed bottom-0 left-0 right-0 bg-white border-t p-4">
-          <div className="max-w-2xl mx-auto flex gap-4">
-            <button
-              onClick={handlePrev}
-              disabled={currentSectionIndex === 0}
-              className="flex-1 btn btn-secondary"
-            >
-              이전
-            </button>
-            <button
-              onClick={handleNext}
-              disabled={isSubmitting}
-              className="flex-1 btn btn-primary"
-            >
-              {isSubmitting ? (
-                <span className="flex items-center justify-center gap-2">
-                  <span className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></span>
-                  제출 중...
-                </span>
-              ) : isLastSection ? (
-                '설문 완료'
-              ) : (
-                '다음'
-              )}
-            </button>
-          </div>
+          )}
         </div>
       </div>
-    </main>
+    </div>
   );
 }

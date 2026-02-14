@@ -56,7 +56,7 @@ export default function AdminPage() {
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[var(--color-primary)]"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[var(--haeul-800)]"></div>
       </div>
     );
   }
@@ -70,34 +70,34 @@ export default function AdminPage() {
       <div className="w-full max-w-sm">
         <div className="text-center mb-8">
           <div className="text-5xl mb-4">🔐</div>
-          <h1 className="text-2xl font-bold text-[var(--color-primary)]">
+          <h1 className="text-2xl font-bold text-[var(--haeul-800)]">
             관리자 로그인
           </h1>
-          <p className="text-[var(--color-text-light)] mt-2">
+          <p className="text-[var(--haeul-600)] mt-2">
             해울한의원 설문 관리 시스템
           </p>
         </div>
 
-        <form onSubmit={handleLogin} className="card">
+        <form onSubmit={handleLogin} className="bg-white rounded-2xl shadow-sm p-6">
           <div className="mb-6">
             <label className="block text-sm font-medium mb-2">비밀번호</label>
             <input
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:border-[var(--color-primary)] transition"
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:border-[var(--haeul-800)] transition"
               placeholder="관리자 비밀번호 입력"
               autoFocus
             />
             {error && <p className="text-red-500 text-sm mt-2">{error}</p>}
           </div>
 
-          <button type="submit" className="w-full btn btn-primary">
+          <button type="submit" className="w-full py-3 px-6 rounded-xl font-semibold bg-[var(--haeul-800)] text-white hover:bg-[var(--haeul-900)] transition">
             로그인
           </button>
         </form>
 
-        <p className="text-center text-sm text-[var(--color-text-light)] mt-6">
+        <p className="text-center text-sm text-[var(--haeul-600)] mt-6">
           <a href="/" className="hover:underline">← 설문 페이지로 돌아가기</a>
         </p>
       </div>

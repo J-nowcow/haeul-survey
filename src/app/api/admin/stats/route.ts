@@ -63,21 +63,21 @@ export async function GET() {
     // 점수 분포 (그레이드별)
     const scoreDistribution = await sql`
       SELECT 
-        CASE 
-          WHEN normalized_score <= 20 THEN '양호'
-          WHEN normalized_score <= 40 THEN '경도'
-          WHEN normalized_score <= 60 THEN '중등도'
-          ELSE '중증'
+        CASE
+          WHEN normalized_score <= 30 THEN '초기관리'
+          WHEN normalized_score <= 50 THEN '적극치료'
+          WHEN normalized_score <= 80 THEN '집중치료'
+          ELSE '심화치료'
         END as grade,
         COUNT(*) as count
       FROM survey_results
       WHERE DATE(created_at) = ${today}
-      GROUP BY 
-        CASE 
-          WHEN normalized_score <= 20 THEN '양호'
-          WHEN normalized_score <= 40 THEN '경도'
-          WHEN normalized_score <= 60 THEN '중등도'
-          ELSE '중증'
+      GROUP BY
+        CASE
+          WHEN normalized_score <= 30 THEN '초기관리'
+          WHEN normalized_score <= 50 THEN '적극치료'
+          WHEN normalized_score <= 80 THEN '집중치료'
+          ELSE '심화치료'
         END
       ORDER BY 
         MIN(normalized_score)

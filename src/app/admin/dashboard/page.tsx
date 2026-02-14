@@ -54,6 +54,11 @@ interface SurveyResult {
 }
 
 const GRADE_COLORS: Record<string, string> = {
+  '초기관리': '#16a34a',
+  '적극치료': '#ca8a04',
+  '집중치료': '#ea580c',
+  '심화치료': '#dc2626',
+  // 기존 데이터 호환
   '양호': '#16a34a',
   '경도': '#ca8a04',
   '중등도': '#ea580c',
@@ -130,7 +135,7 @@ export default function AdminDashboard() {
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-100">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[var(--color-primary)]"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[var(--haeul-800)]"></div>
       </div>
     );
   }
@@ -142,7 +147,7 @@ export default function AdminDashboard() {
         <div className="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
           <div className="flex items-center gap-3">
             <span className="text-2xl">🏥</span>
-            <h1 className="text-xl font-bold text-[var(--color-primary)]">
+            <h1 className="text-xl font-bold text-[var(--haeul-800)]">
               해울한의원 관리자
             </h1>
           </div>
@@ -151,7 +156,7 @@ export default function AdminDashboard() {
               onClick={() => setActiveTab('dashboard')}
               className={`px-4 py-2 rounded-lg font-medium transition ${
                 activeTab === 'dashboard'
-                  ? 'bg-[var(--color-primary)] text-white'
+                  ? 'bg-[var(--haeul-800)] text-white'
                   : 'text-gray-600 hover:bg-gray-100'
               }`}
             >
@@ -161,7 +166,7 @@ export default function AdminDashboard() {
               onClick={() => setActiveTab('list')}
               className={`px-4 py-2 rounded-lg font-medium transition ${
                 activeTab === 'list'
-                  ? 'bg-[var(--color-primary)] text-white'
+                  ? 'bg-[var(--haeul-800)] text-white'
                   : 'text-gray-600 hover:bg-gray-100'
               }`}
             >
@@ -183,25 +188,25 @@ export default function AdminDashboard() {
           <div className="space-y-6">
             {/* 오늘 통계 카드 */}
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-              <div className="card">
+              <div className="bg-white rounded-2xl shadow-sm p-6">
                 <p className="text-sm text-gray-500 mb-1">오늘 접수</p>
-                <p className="text-3xl font-bold text-[var(--color-primary)]">
+                <p className="text-3xl font-bold text-[var(--haeul-800)]">
                   {stats?.today.count || 0}명
                 </p>
               </div>
-              <div className="card">
+              <div className="bg-white rounded-2xl shadow-sm p-6">
                 <p className="text-sm text-gray-500 mb-1">오늘 평균 점수</p>
                 <p className="text-3xl font-bold text-orange-600">
                   {Math.round(stats?.today.avg_score || 0)}점
                 </p>
               </div>
-              <div className="card">
+              <div className="bg-white rounded-2xl shadow-sm p-6">
                 <p className="text-sm text-gray-500 mb-1">심층 진료 동의</p>
                 <p className="text-3xl font-bold text-blue-600">
                   {stats?.today.treatment_agreed_count || 0}명
                 </p>
               </div>
-              <div className="card">
+              <div className="bg-white rounded-2xl shadow-sm p-6">
                 <p className="text-sm text-gray-500 mb-1">전체 누적</p>
                 <p className="text-3xl font-bold text-gray-700">
                   {stats?.total.total_count || 0}명
@@ -212,7 +217,7 @@ export default function AdminDashboard() {
             {/* 차트 영역 */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               {/* 주간 추이 */}
-              <div className="card">
+              <div className="bg-white rounded-2xl shadow-sm p-6">
                 <h3 className="text-lg font-semibold mb-4">📈 최근 7일 접수 현황</h3>
                 <ResponsiveContainer width="100%" height={300}>
                   <LineChart data={stats?.weekly || []}>
@@ -232,14 +237,14 @@ export default function AdminDashboard() {
                         ];
                       }}
                     />
-                    <Line type="monotone" dataKey="count" stroke="#2D5A27" strokeWidth={2} name="count" />
+                    <Line type="monotone" dataKey="count" stroke="#1B4D3E" strokeWidth={2} name="count" />
                     <Line type="monotone" dataKey="avg_score" stroke="#ea580c" strokeWidth={2} name="avg_score" />
                   </LineChart>
                 </ResponsiveContainer>
               </div>
 
               {/* 등급 분포 */}
-              <div className="card">
+              <div className="bg-white rounded-2xl shadow-sm p-6">
                 <h3 className="text-lg font-semibold mb-4">📊 오늘 등급 분포</h3>
                 {stats?.distribution && stats.distribution.length > 0 ? (
                   <ResponsiveContainer width="100%" height={300}>
@@ -268,7 +273,7 @@ export default function AdminDashboard() {
               </div>
 
               {/* 점수대별 분포 (막대 그래프) */}
-              <div className="card lg:col-span-2">
+              <div className="bg-white rounded-2xl shadow-sm p-6 lg:col-span-2">
                 <h3 className="text-lg font-semibold mb-4">📋 점수대별 분포</h3>
                 <ResponsiveContainer width="100%" height={250}>
                   <BarChart data={stats?.distribution || []}>
@@ -290,14 +295,14 @@ export default function AdminDashboard() {
           // 환자 목록 탭
           <div className="space-y-4">
             {/* 필터 */}
-            <div className="card flex flex-wrap gap-4 items-center">
+            <div className="bg-white rounded-2xl shadow-sm p-6 flex flex-wrap gap-4 items-center">
               <div>
                 <label className="block text-sm font-medium mb-1">날짜</label>
                 <input
                   type="date"
                   value={dateFilter}
                   onChange={(e) => setDateFilter(e.target.value)}
-                  className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-[var(--color-primary)]"
+                  className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-[var(--haeul-800)]"
                 />
               </div>
               <div className="flex-1 min-w-[200px]">
@@ -307,18 +312,18 @@ export default function AdminDashboard() {
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   placeholder="환자 이름으로 검색"
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-[var(--color-primary)]"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-[var(--haeul-800)]"
                 />
               </div>
               <div className="self-end">
-                <button onClick={handleExportCSV} className="btn btn-secondary">
+                <button onClick={handleExportCSV} className="py-2 px-4 rounded-xl font-semibold bg-gray-200 text-gray-700 hover:bg-gray-300 transition">
                   📥 CSV 내보내기
                 </button>
               </div>
             </div>
 
             {/* 결과 목록 */}
-            <div className="card overflow-x-auto">
+            <div className="bg-white rounded-2xl shadow-sm p-6 overflow-x-auto">
               <table className="w-full">
                 <thead>
                   <tr className="border-b">
@@ -375,7 +380,7 @@ export default function AdminDashboard() {
                         <td className="py-3 px-4">
                           <button
                             onClick={() => setSelectedResult(result)}
-                            className="text-[var(--color-primary)] hover:underline text-sm"
+                            className="text-[var(--haeul-800)] hover:underline text-sm"
                           >
                             상세보기
                           </button>
@@ -413,7 +418,7 @@ function DetailModal({ result, onClose }: { result: SurveyResult; onClose: () =>
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50" onClick={onClose}>
-      <div className="card max-w-2xl w-full max-h-[80vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+      <div className="bg-white rounded-2xl shadow-sm p-6 max-w-2xl w-full max-h-[80vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
         <div className="flex justify-between items-start mb-6">
           <div>
             <h2 className="text-xl font-bold">{result.patient_name}님 상세 결과</h2>
@@ -465,7 +470,7 @@ function DetailModal({ result, onClose }: { result: SurveyResult; onClose: () =>
                   <span className="w-24 text-sm truncate">{key}</span>
                   <div className="flex-1 h-2 bg-gray-200 rounded-full overflow-hidden">
                     <div
-                      className="h-full bg-[var(--color-primary)] rounded-full"
+                      className="h-full bg-[var(--haeul-800)] rounded-full"
                       style={{ width: value.skipped ? '0%' : `${(value.score / value.maxScore) * 100}%` }}
                     />
                   </div>

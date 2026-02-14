@@ -4,8 +4,8 @@
   "description": "해울한의원 환자 자가진단 설문조사",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#F8F6F3",
-  "theme_color": "#2D5A27",
+  "background_color": "#fbfaf8",
+  "theme_color": "#1B4D3E",
   "orientation": "portrait",
   "icons": [
     {

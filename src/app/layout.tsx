@@ -7,7 +7,7 @@ export const metadata: Metadata = {
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
-    statusBarStyle: "default",
+    statusBarStyle: "black-translucent",
     title: "해울한의원",
   },
 };
@@ -17,7 +17,8 @@ export const viewport: Viewport = {
   initialScale: 1,
   maximumScale: 1,
   userScalable: false,
-  themeColor: "#2D5A27",
+  viewportFit: "cover",
+  themeColor: "#fbfaf8",
 };
 
 export default function RootLayout({
@@ -28,6 +29,10 @@ export default function RootLayout({
   return (
     <html lang="ko">
       <head>
+        <link
+          href="https://hangeul.pstatic.net/hangeul_static/css/nanum-square-round.css"
+          rel="stylesheet"
+        />
         <link rel="apple-touch-icon" href="/icon-192.png" />
       </head>
       <body className="antialiased">
