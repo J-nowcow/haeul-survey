@@ -575,7 +575,7 @@ function DetailModal({ result, onClose }: { result: SurveyResult; onClose: () =>
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50" onClick={onClose}>
-      <div className="bg-white rounded-2xl shadow-sm p-6 max-w-5xl w-full max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+      <div className="bg-white rounded-2xl shadow-sm p-6 max-w-2xl w-full max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
         <div className="flex justify-between items-start mb-6">
           <div>
             <h2 className="text-xl font-bold">{result.patient_name}님 상세 결과</h2>
@@ -729,98 +729,66 @@ function DetailModal({ result, onClose }: { result: SurveyResult; onClose: () =>
           </div>
         )}
 
-        {/* 설문 문항 보기 (좌우 분할) */}
+        {/* 설문 문항 보기 (카테고리별 통합) */}
         {detail && (
           <div className="mb-6">
-            <div className="flex justify-center mb-3">
+            <div className="flex justify-between items-center mb-3">
+              <h3 className="font-semibold">설문 문항 (🟢 {totalSelectedCount}개 선택 / ❌ {totalUnselectedCount}개 미선택)</h3>
               <button
                 onClick={toggleAllCategories}
-                className="text-sm px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition"
+                className="text-sm px-3 py-1 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition"
               >
                 {allExpanded ? '전체 접기' : '전체 펼치기'}
               </button>
             </div>
             
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {/* 왼쪽: 선택한 문항 */}
-              <div>
-                <h3 className="font-semibold mb-3 text-[var(--haeul-800)]">✓ 선택한 문항 ({totalSelectedCount}개)</h3>
-                {totalSelectedCount === 0 ? (
-                  <div className="p-4 bg-gray-50 rounded-lg text-center text-gray-400">
-                    선택한 문항이 없습니다
-                  </div>
-                ) : (
-                  <div className="space-y-2">
-                    {Object.entries(groupedItems).map(([catId, qIds]) => (
-                      <div key={catId} className="border border-gray-200 rounded-lg overflow-hidden">
-                        <button
-                          onClick={() => toggleCategory(catId)}
-                          className="w-full px-4 py-3 bg-gray-50 flex justify-between items-center hover:bg-gray-100 transition"
-                        >
-                          <span className="font-medium">{CATEGORY_NAME_MAP[catId] || catId} ({qIds.length}개)</span>
-                          <span className="text-gray-400">{expandedCategories.has(catId) ? '▼' : '▶'}</span>
-                        </button>
-                        {expandedCategories.has(catId) && (
-                          <div className="px-4 py-3 bg-white border-t border-gray-200">
-                            {catId === 'period' && result.gender === 'male' ? (
-                              <p className="text-sm text-gray-400 italic">해당되지 않는 항목입니다</p>
-                            ) : (
-                              <ul className="space-y-2">
-                                {qIds.map(qId => (
-                                  <li key={qId} className="text-sm text-gray-700 flex items-start gap-2">
-                                    <span className="text-[var(--haeul-800)]">✓</span>
-                                    <span>{QUESTIONS_MAP[catId]?.[qId] || qId}</span>
-                                  </li>
-                                ))}
-                              </ul>
-                            )}
-                          </div>
+            <div className="space-y-2">
+              {Object.entries(QUESTIONS_MAP).map(([catId, questions]) => {
+                const selectedQIds = groupedItems[catId] || [];
+                const unselectedQIds = unselectedGroupedItems[catId] || [];
+                const totalQIds = Object.keys(questions);
+                
+                // 남성의 경우 생리 카테고리는 해당없음으로 표시
+                const isSkippedForMale = catId === 'period' && result.gender === 'male';
+                
+                return (
+                  <div key={catId} className="border border-gray-200 rounded-lg overflow-hidden">
+                    <button
+                      onClick={() => toggleCategory(catId)}
+                      className="w-full px-4 py-3 bg-gray-50 flex justify-between items-center hover:bg-gray-100 transition"
+                    >
+                      <span className="font-medium">
+                        {CATEGORY_NAME_MAP[catId] || catId} 
+                        {isSkippedForMale ? (
+                          <span className="text-gray-400 text-sm ml-2">(해당없음)</span>
+                        ) : (
+                          <span className="text-gray-500 text-sm ml-2">({selectedQIds.length}/{totalQIds.length})</span>
+                        )}
+                      </span>
+                      <span className="text-gray-400">{expandedCategories.has(catId) ? '▼' : '▶'}</span>
+                    </button>
+                    {expandedCategories.has(catId) && (
+                      <div className="px-4 py-3 bg-white border-t border-gray-200">
+                        {isSkippedForMale ? (
+                          <p className="text-sm text-gray-400 italic">해당되지 않는 항목입니다</p>
+                        ) : (
+                          <ul className="space-y-2">
+                            {totalQIds.map(qId => {
+                              const isSelected = selectedQIds.includes(qId);
+                              return (
+                                <li key={qId} className="text-sm text-gray-700 flex items-start gap-2">
+                                  <span>{isSelected ? '🟢' : '❌'}</span>
+                                  <span>{questions[qId]}</span>
+                                </li>
+                              );
+                            })}
+                          </ul>
                         )}
                       </div>
-                    ))}
+                    )}
                   </div>
-                )}
-              </div>
-              
-              {/* 오른쪽: 선택하지 않은 문항 */}
-              <div>
-                <h3 className="font-semibold mb-3 text-gray-500">○ 선택하지 않은 문항 ({totalUnselectedCount}개)</h3>
-                {totalUnselectedCount === 0 ? (
-                  <div className="p-4 bg-gray-50 rounded-lg text-center text-gray-400">
-                    선택하지 않은 문항이 없습니다
-                  </div>
-                ) : (
-                  <div className="space-y-2">
-                    {Object.entries(unselectedGroupedItems).map(([catId, qIds]) => (
-                      <div key={catId} className="border border-gray-200 rounded-lg overflow-hidden">
-                        <button
-                          onClick={() => toggleCategory(catId)}
-                          className="w-full px-4 py-3 bg-gray-50 flex justify-between items-center hover:bg-gray-100 transition"
-                        >
-                          <span className="font-medium">{CATEGORY_NAME_MAP[catId] || catId} ({qIds.length}개)</span>
-                          <span className="text-gray-400">{expandedCategories.has(catId) ? '▼' : '▶'}</span>
-                        </button>
-                        {expandedCategories.has(catId) && (
-                          <div className="px-4 py-3 bg-white border-t border-gray-200">
-                            {catId === 'period' && result.gender === 'male' ? (
-                              <p className="text-sm text-gray-400 italic">해당되지 않는 항목입니다</p>
-                            ) : (
-                              <ul className="space-y-2">
-                                {qIds.map(qId => (
-                                  <li key={qId} className="text-sm text-gray-700 flex items-start gap-2">
-                                    <span className="text-gray-400">○</span>
-                                    <span>{QUESTIONS_MAP[catId]?.[qId] || qId}</span>
-                                  </li>
-                                ))}
-                              </ul>
-                            )}
-                          </div>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
+                );
+              })}
             </div>
           </div>
         )}
