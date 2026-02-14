@@ -153,16 +153,6 @@ export default function AdminDashboard() {
           </div>
           <div className="flex items-center gap-4">
             <button
-              onClick={() => setActiveTab('dashboard')}
-              className={`px-4 py-2 rounded-lg font-medium transition ${
-                activeTab === 'dashboard'
-                  ? 'bg-[var(--haeul-800)] text-white'
-                  : 'text-gray-600 hover:bg-gray-100'
-              }`}
-            >
-              대시보드
-            </button>
-            <button
               onClick={() => setActiveTab('list')}
               className={`px-4 py-2 rounded-lg font-medium transition ${
                 activeTab === 'list'
@@ -171,6 +161,16 @@ export default function AdminDashboard() {
               }`}
             >
               환자 목록
+            </button>
+            <button
+              onClick={() => setActiveTab('dashboard')}
+              className={`px-4 py-2 rounded-lg font-medium transition ${
+                activeTab === 'dashboard'
+                  ? 'bg-[var(--haeul-800)] text-white'
+                  : 'text-gray-600 hover:bg-gray-100'
+              }`}
+            >
+              대시보드
             </button>
             <button
               onClick={handleLogout}
