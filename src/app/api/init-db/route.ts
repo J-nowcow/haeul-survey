@@ -12,12 +12,12 @@ export async function GET() {
     ` as Array<Record<string, unknown>>;
 
     if (columnCheck.length > 0) {
-      // 기존 데이터를 010-0000-XXXX 형식으로 변환
+      // 1. 먼저 컬럼 타입을 VARCHAR(20)으로 변경
+      await sql`ALTER TABLE survey_results ALTER COLUMN phone_last4 TYPE VARCHAR(20)`;
+      // 2. 기존 데이터를 010-0000-XXXX 형식으로 변환
       await sql`UPDATE survey_results SET phone_last4 = '010-0000-' || phone_last4 WHERE phone_last4 !~ '^010'`;
-      // 컬럼명 변경
+      // 3. 컬럼명 변경
       await sql`ALTER TABLE survey_results RENAME COLUMN phone_last4 TO phone`;
-      // 컬럼 타입 변경
-      await sql`ALTER TABLE survey_results ALTER COLUMN phone TYPE VARCHAR(20)`;
     }
 
     // 테이블 생성 (새로 생성 시)
