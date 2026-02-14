@@ -18,7 +18,7 @@ CREATE TABLE IF NOT EXISTS survey_results (
   patient_name VARCHAR(50) NOT NULL,
   birth_date VARCHAR(10) NOT NULL,
   gender VARCHAR(10) NOT NULL,
-  phone_last4 VARCHAR(4) NOT NULL,
+  phone VARCHAR(20) NOT NULL,
   
   -- 설문 결과
   total_score INTEGER NOT NULL,
@@ -44,4 +44,21 @@ CREATE TABLE IF NOT EXISTS survey_results (
 -- 인덱스 생성
 CREATE INDEX IF NOT EXISTS idx_survey_results_created_at ON survey_results(created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_survey_results_patient_name ON survey_results(patient_name);
+`;
+
+// 기존 phone_last4 -> phone 마이그레이션 SQL
+// 기존 4자리 전화번호를 010-0000-XXXX 형식으로 변환
+export const migratePhoneSQL = `
+-- 컬럼명 변경 (기존 테이블에 phone_last4가 있는 경우)
+DO $$
+BEGIN
+  IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'survey_results' AND column_name = 'phone_last4') THEN
+    -- 기존 데이터를 010-0000-XXXX 형식으로 변환
+    UPDATE survey_results SET phone_last4 = '010-0000-' || phone_last4 WHERE phone_last4 !~ '^010';
+    -- 컬럼명 변경
+    ALTER TABLE survey_results RENAME COLUMN phone_last4 TO phone;
+    -- 컬럼 타입 변경
+    ALTER TABLE survey_results ALTER COLUMN phone TYPE VARCHAR(20);
+  END IF;
+END $$;
 `;

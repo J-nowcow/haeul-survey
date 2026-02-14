@@ -22,7 +22,7 @@ interface PatientInfo {
   name: string;
   birthDate: string;
   gender: 'male' | 'female';
-  phoneLast4: string;
+  phone: string;
 }
 
 export default function SurveyPage() {

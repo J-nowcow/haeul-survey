@@ -8,7 +8,7 @@ interface PatientInfo {
   name: string;
   birthDate: string;
   gender: 'male' | 'female';
-  phoneLast4: string;
+  phone: string;
 }
 
 export default function Home() {
@@ -17,7 +17,7 @@ export default function Home() {
     name: '',
     birthDate: '',
     gender: 'female',
-    phoneLast4: '',
+    phone: '010-',
   });
 
   const handleSubmit = () => {
@@ -73,13 +73,30 @@ export default function Home() {
             </div>
           </div>
           <div>
-            <label className="block text-sm font-bold text-haeul-800 mb-1.5 ml-1">연락처 (뒤 4자리)</label>
+            <label className="block text-sm font-bold text-haeul-800 mb-1.5 ml-1">연락처</label>
             <input
               type="text"
-              value={patientInfo.phoneLast4}
-              onChange={(e) => setPatientInfo({ ...patientInfo, phoneLast4: e.target.value.replace(/\D/g, '') })}
-              placeholder="1234"
-              maxLength={4}
+              value={patientInfo.phone}
+              onChange={(e) => {
+                // 숫자만 추출
+                const digits = e.target.value.replace(/\D/g, '');
+                // 010으로 시작하지 않으면 010 추가
+                const normalized = digits.startsWith('010') ? digits : '010' + digits.replace(/^010/, '');
+                // 최대 11자리까지만
+                const limited = normalized.slice(0, 11);
+                // 자동 대시 삽입 (010-1234-5678 형식)
+                let formatted = '';
+                if (limited.length <= 3) {
+                  formatted = limited;
+                } else if (limited.length <= 7) {
+                  formatted = `${limited.slice(0, 3)}-${limited.slice(3)}`;
+                } else {
+                  formatted = `${limited.slice(0, 3)}-${limited.slice(3, 7)}-${limited.slice(7)}`;
+                }
+                setPatientInfo({ ...patientInfo, phone: formatted });
+              }}
+              placeholder="010-1234-5678"
+              maxLength={13}
               inputMode="numeric"
               className="w-full p-4 bg-haeul-50 border border-haeul-200 rounded-2xl focus:outline-none focus:border-haeul-800 focus:ring-1 focus:ring-haeul-800 transition-all text-lg"
             />

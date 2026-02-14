@@ -283,3 +283,20 @@ export const getGrade = (normalizedScore: number): { grade: string; level: numbe
     color: normalizedScore <= 30 ? 'text-green-600' : normalizedScore <= 50 ? 'text-yellow-600' : normalizedScore <= 80 ? 'text-orange-600' : 'text-red-600',
   };
 };
+
+// 카테고리 ID -> 한국어 이름 매핑
+export const CATEGORY_NAME_MAP: Record<string, string> = {
+  digest: '소화',
+  sleep: '수면',
+  stool: '대변/장',
+  urine: '소변/방광',
+  fluid: '수분(땀/부종)',
+  temp: '한열(추위/더위)',
+  mental: '정신/스트레스',
+  period: '생리(여성)',
+  head_face: '두면부(머리/얼굴)',
+  chest: '흉부(가슴/목)',
+  abdomen: '복부(배)',
+  limbs: '사지(팔다리)',
+  joints: '관절/척추',
+};

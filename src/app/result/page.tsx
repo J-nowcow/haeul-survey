@@ -14,7 +14,7 @@ interface SurveyResult {
     name: string;
     birthDate: string;
     gender: 'male' | 'female';
-    phoneLast4: string;
+    phone: string;
   };
   totalScore: number;
   normalizedScore: number;
