@@ -144,7 +144,6 @@ export default function SurveyPage() {
         <div className="flex justify-between items-center mb-4">
           <div>
             <h1 className="text-xl md:text-2xl font-bold text-haeul-800">{patientInfo.name}님</h1>
-            <p className="text-sm text-haeul-600 font-medium">해울한의원 자가진단</p>
           </div>
           <div className="text-right">
             <div className="text-xs font-bold text-haeul-600 mb-1">현재 상태</div>

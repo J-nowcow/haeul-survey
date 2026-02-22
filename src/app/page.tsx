@@ -34,7 +34,6 @@ export default function Home() {
       <div className="bg-white p-8 rounded-3xl shadow-xl border border-haeul-200">
         <div className="text-center mb-8">
           <h1 className="text-3xl font-bold text-haeul-800 mb-2">해울한의원</h1>
-          <p className="text-haeul-600 font-medium">자가 건강 진단 시스템</p>
         </div>
         <div className="space-y-5">
           <div>
